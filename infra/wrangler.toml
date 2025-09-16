@@ -1,0 +1,37 @@
+name = "purple-vs-yellow-worker"
+main = "worker/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[triggers]
+crons = [
+  "*/5 * * * *",  # Health checks every 5 minutes
+  "*/1 * * * *"   # Oracle processing every minute (when LIVE_TESTING=true)
+]
+
+[[kv_namespaces]]
+binding = "ROUNDS_KV"
+id = "your_rounds_kv_id"
+preview_id = "your_rounds_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "HISTORY_KV"
+id = "your_history_kv_id"
+preview_id = "your_history_kv_preview_id"
+
+[[durable_objects.bindings]]
+name = "ROUND_MANAGER"
+class_name = "RoundManager"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RoundManager"]
+
+[build]
+command = "npm run build"
+
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"

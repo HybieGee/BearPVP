@@ -1,0 +1,64 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    name: Deploy to Cloudflare Pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_NETWORK: ${{ secrets.NEXT_PUBLIC_NETWORK }}
+          NEXT_PUBLIC_TWITCH_CHANNEL: ${{ secrets.NEXT_PUBLIC_TWITCH_CHANNEL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: purple-vs-yellow
+          directory: .next
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: '.'
+          command: deploy --config infra/wrangler.toml
+        env:
+          ROUND_OPEN_SECONDS: ${{ secrets.ROUND_OPEN_SECONDS }}
+          LOCK_TO_RESULT_TIMEOUT_SECONDS: ${{ secrets.LOCK_TO_RESULT_TIMEOUT_SECONDS }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+          PAYOUT_SIGNER_SECRET: ${{ secrets.PAYOUT_SIGNER_SECRET }}
+          TREASURY_ADDRESS: ${{ secrets.TREASURY_ADDRESS }}
+          PUMPFUN_API_KEY: ${{ secrets.PUMPFUN_API_KEY }}
+          TOKEN_MINT: ${{ secrets.TOKEN_MINT }}
+          CV_CONFIDENCE_THRESHOLD: ${{ secrets.CV_CONFIDENCE_THRESHOLD }}
+          CONSECUTIVE_FRAME_REQUIREMENT: ${{ secrets.CONSECUTIVE_FRAME_REQUIREMENT }}
+          LIVE_TESTING: ${{ secrets.LIVE_TESTING }}
